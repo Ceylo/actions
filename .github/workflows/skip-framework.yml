@@ -254,6 +254,18 @@ jobs:
           install-swift-android-sdk: ${{ steps.setup.outputs.skip-fuse }}
           swift-android-sdk-version: ${{ matrix.android-sdk }}
 
+      - name: "Fork-only: use a skipstone fork run's Linux skip binary"
+        if: ${{ runner.os == 'Linux' && env.SKIP_LINUX_OVERRIDE_RUN != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download -R Ceylo/skipstone "${SKIP_LINUX_OVERRIDE_RUN}" -n skip-plugin-Linux -D "${RUNNER_TEMP}/skip-override"
+          cd "${RUNNER_TEMP}/skip-override" && unzip -q skip-linux.zip
+          BIN="${PWD}/skip.artifactbundle/x86_64-swift-linux-musl/skip"
+          chmod +x "${BIN}"
+          readelf -lW "${BIN}" | grep GNU_STACK
+          echo "SKIP_COMMAND_OVERRIDE=${BIN}" >> "${GITHUB_ENV}"
+
       - name: Install Prerequisities
         if: ${{ inputs.brew-install != '' }}
         run: brew install ${{ inputs.brew-install }}
